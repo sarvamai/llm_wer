@@ -1,0 +1,18 @@
+[project]
+name = "llm-wer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gspread>=6.2.1",
+    "indic-nlp-library>=0.92",
+    "jiwer>=4.0.0",
+    "joblib>=1.5.1",
+    "jsonlines>=4.0.0",
+    "openai>=1.93.0",
+    "pandas>=2.3.0",
+    "tqdm>=4.67.1",
+    "transformers>=4.53.0",
+    "vertexai>=1.71.1",
+]
