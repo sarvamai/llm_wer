@@ -64,7 +64,7 @@ lang_to_code = {
     'marathi': 'mr',
     'odia': 'or',
     'oria': 'or',
-    'assamese': 'or',
+    'assamese': 'as',
     'punjabi': 'pa',
     'english': 'en'
 }
