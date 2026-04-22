@@ -4,7 +4,7 @@ from difflib import SequenceMatcher
 import logging
 from pathlib import Path
 import json
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 from utilities import wer, cer, IndicNormalizer, push_to_sheet
 
@@ -214,46 +214,61 @@ def reconstruct_and_score(df: pd.DataFrame, row_segment_map: dict, equivalent_fl
     return df
 
 
-def save_outputs(df: pd.DataFrame, logs: List[Dict], failed: List[Dict], outputs_dir: Path, sheet_name: str, worksheet_prefix: str, creds_path: Path):
+def save_outputs(df: pd.DataFrame, logs: List[Dict], failed: List[Dict], outputs_dir: Path, sheet_name: Optional[str] = None, worksheet_prefix: Optional[str] = None, creds_path: Optional[Path] = None):
     outputs_dir.mkdir(parents=True, exist_ok=True)
-    
+
     df.to_csv(outputs_dir / "llm_wer.csv", index=False)
     print(f"Output saved to {outputs_dir / 'llm_wer.csv'}")
-    push_to_sheet(df, sheet_name, f"{worksheet_prefix} - full output", creds_path)
+    if creds_path and sheet_name and worksheet_prefix:
+        push_to_sheet(df, sheet_name, f"{worksheet_prefix} - full output", creds_path)
 
     if logs:
         logs_df = pd.DataFrame(logs)
         logs_df.to_csv(outputs_dir / "llm_logs.csv", index=False)
         print(f"LLM logs saved to {outputs_dir / 'llm_logs.csv'}")
-        push_to_sheet(logs_df, sheet_name, f"{worksheet_prefix} - llm logs", creds_path)
+        if creds_path and sheet_name and worksheet_prefix:
+            push_to_sheet(logs_df, sheet_name, f"{worksheet_prefix} - llm logs", creds_path)
 
     if failed:
         failed_df = pd.DataFrame(failed)
         failed_df.to_csv(outputs_dir / "llm_failed_requests.csv", index=False)
-        print(f"Failed LLM requests saved to {outputs_dir / 'llm_failed_requests.csv'}")
+        print(f"Failed LLM requests saved to {outputs_dir / 'llm_failed_requests.csv'")
 
 
 def process_dataset_with_predictions(
-    dataset_path: str, 
-    reference_col_name: str, 
-    predicted_col_name: str, 
-    audio_filepath_col_name: str, 
-    creds_path: str,
+    dataset_path: str,
+    reference_col_name: str,
+    predicted_col_name: str,
+    audio_filepath_col_name: str,
     language_col_name: str = "language",
-    output_sheet_name: str = "llm-wer-analysis",
-    output_worksheet_name: str = "llm-wer-output",
-    ignore_cache: bool = False,
+    # LLM configuration — defaults to Gemini via Vertex AI
+    model_name: str = "google/gemini-2.5-flash",
+    gemini: bool = True,
+    creds_path: Optional[str] = None,
     gemini_location: str = "us-central1",
+    api_key: str = "",
+    base_url: str = "",
+    # Google Sheets output — optional; omit to skip sheet upload
+    output_sheet_name: Optional[str] = None,
+    output_worksheet_name: Optional[str] = None,
+    ignore_cache: bool = False,
 ):
-    creds_path_obj = Path(creds_path)
-    if not creds_path_obj.exists():
-        raise FileNotFoundError(f"Credentials file not found at {creds_path}")
+    if gemini:
+        if not creds_path:
+            raise ValueError("`creds_path` is required when using Gemini (gemini=True).")
+        creds_path_obj = Path(creds_path)
+        if not creds_path_obj.exists():
+            raise FileNotFoundError(f"Credentials file not found at {creds_path}")
+    else:
+        if not api_key or not base_url:
+            raise ValueError("`api_key` and `base_url` are required when gemini=False.")
+        creds_path_obj = None
 
     api = ChatCompletionsAPI(
-        model_name="google/gemini-2.5-flash",
-        api_key="",
-        base_url="",
-        gemini=True,
+        model_name=model_name,
+        api_key=api_key,
+        base_url=base_url,
+        gemini=gemini,
         max_retries=0,
         timeout=None,
         creds_path=creds_path,
@@ -278,17 +293,35 @@ def process_dataset_with_predictions(
     
     outputs_dir = Path(__file__).parent / "outputs" / Path(dataset_path).stem
     outputs_dir.mkdir(parents=True, exist_ok=True)
-    save_outputs(df, log_records, failed, outputs_dir, output_sheet_name, output_worksheet_name, creds_path_obj)
+    save_outputs(df, log_records, failed, outputs_dir, output_sheet_name, output_worksheet_name, creds_path_obj)  # type: ignore
 
 if __name__ == "__main__":
-    process_dataset_with_predictions(
-        dataset_path="/path/to/path_with_predictions.csv", 
-        reference_col_name="transcription", 
-        predicted_col_name="prediction", 
-        audio_filepath_col_name="audio_filepath",
-        creds_path="/path/to/creds.json",
-        language_col_name="language",
-        output_sheet_name="LLM WER Analysis",
-        output_worksheet_name="<name of worksheet>",
-        ignore_cache=True,
-    ) 
+    # --- Gemini via Vertex AI (default) ---
+    # process_dataset_with_predictions(
+    #     dataset_path="/path/to/predictions.csv",
+    #     reference_col_name="transcription",
+    #     predicted_col_name="prediction",
+    #     audio_filepath_col_name="audio_filepath",
+    #     language_col_name="language",
+    #     gemini=True,
+    #     creds_path="/path/to/service_account.json",
+    #     # Optional: push results to Google Sheets
+    #     output_sheet_name="LLM WER Analysis",
+    #     output_worksheet_name="run-1",
+    #     ignore_cache=False,
+    # )
+
+    # --- Any OpenAI-compatible API (GPT-4o, Claude via proxy, etc.) ---
+    # process_dataset_with_predictions(
+    #     dataset_path="/path/to/predictions.csv",
+    #     reference_col_name="transcription",
+    #     predicted_col_name="prediction",
+    #     audio_filepath_col_name="audio_filepath",
+    #     language_col_name="language",
+    #     gemini=False,
+    #     model_name="gpt-4o",
+    #     api_key="sk-...",
+    #     base_url="https://api.openai.com/v1",
+    #     ignore_cache=False,
+    # )
+    pass
