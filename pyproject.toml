@@ -16,3 +16,13 @@ dependencies = [
     "transformers>=4.53.0",
     "vertexai>=1.71.1",
 ]
+
+[project.scripts]
+llm-wer = "cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
