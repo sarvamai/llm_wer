@@ -71,16 +71,16 @@ You will be given a list of JSON objects, of the following format:
 
 
 # Output Format
-Your final output must be a single JSON object with the keys: `index`, `equivalence` and `reasoning`.
+Your final output must be a single JSON object with the keys: `index`, `equivalent` and `reasoning`.
 
 - **`index`**: An integer value. Ensure that the `index` is the same as the input index for the corresponding reference and prediction pair.
-- **`equivalence`**: A boolean value. Use `True` for an exact match and `False` for a mismatch after carefully considering all the rules and analyzing the transcripts.
+- **`equivalent`**: A boolean value. Use `True` for an exact match and `False` for a mismatch after carefully considering all the rules and analyzing the transcripts.
 - **`reasoning`**: A string. Provide a brief, clear explanation for the equivalence value, highlighting the specific words or sequences along with it's translation as well as transliteration to English.
 
 ```json
 {
     "index": int,
-    "equivalence": bool,
+    "equivalent": bool,
     "reasoning": str
 }
 ```
