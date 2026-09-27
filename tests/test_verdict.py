@@ -15,9 +15,10 @@ def test_schema_field_is_preferred_over_the_legacy_key():
 
 def test_prompt_json_key_matches_the_response_model():
     prompt = (ROOT / "prompt_template.txt").read_text(encoding="utf-8")
-    example = prompt.split("```json", 1)[1].split("```", 1)[0]
+    output = prompt.split("# Output Format", 1)[1]
+    example = output.split("```json", 1)[1].split("```", 1)[0]
     assert '"equivalent"' in example
-    assert '"equivalence"' not in example
+    assert "equivalence" not in output
 
     tree = ast.parse((ROOT / "main.py").read_text(encoding="utf-8"))
     fields = set()
