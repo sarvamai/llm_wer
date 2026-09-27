@@ -7,6 +7,7 @@ import json
 from typing import List, Dict, Any, Tuple
 import pandas as pd
 from utilities import wer, cer, IndicNormalizer, push_to_sheet
+from verdict import verdict_is_equivalent
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +168,7 @@ def process_llm_responses(successful_responses: list, unique_segments_to_process
             continue
         
         ref, pred = segment_info["reference"], segment_info["prediction"]
-        is_equivalent = llm_res.get("equivalent", False)
+        is_equivalent = verdict_is_equivalent(llm_res)
         llm_verdicts[(ref, pred)] = is_equivalent
         log_records.append({
             "reference": ref,
